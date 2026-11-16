@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0f19">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Jarvis | Productividad & Agenda Personal</title>
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        dark: {
+                            base: '#070a12',
+                            surface: '#0b0f19',
+                            card: '#111827',
+                            border: '#1f293d',
+                            hover: '#1e293b'
+                        },
+                        accent: {
+                            cyan: '#06b6d4',
+                            emerald: '#10b981',
+                            purple: '#8b5cf6',
+                            amber: '#f59e0b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Optimizaciones táctiles y mobile-first */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        input, textarea {
+            user-select: auto;
+        }
+        body {
+            background-color: #070a12;
+            color: #f1f5f9;
+            overscroll-behavior-y: contain;
+            font-family: 'Inter', sans-serif;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .glass-card {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(15, 23, 42, 0.6) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.1);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.35);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
+        }
+        .custom-checkbox {
+            appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            border: 2px solid #334155;
+            background: rgba(15, 23, 42, 0.6);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .custom-checkbox:checked {
+            background: linear-gradient(135deg, #06b6d4, #10b981);
+            border-color: #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+        }
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 800;
+        }
+        /* Scrollbar delgada y futurista */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070a12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500/30 selection:text-cyan-200">
+
+    <!-- BARRA SUPERIOR DE ESTADO / HEADER -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-slate-800/80 px-4 sm:px-6 py-3.5">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            
+            <!-- Logo & Estado Jarvis -->
+            <div class="flex items-center gap-3">
+                <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-emerald-500 text-slate-950 font-black text-xl shadow-lg glow-cyan">
+                    <span>J</span>
+                    <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+                    </span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg font-black tracking-wider text-white font-mono">JARVIS</h1>
+                        <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-slate-400" id="currentDateDisplay">Cargando fecha...</p>
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas: Racha y Botón Webhook de Voz -->
+            <div class="flex items-center gap-2.5">
+                
+                <!-- Badge de Racha -->
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold" title="Días consecutivos cumpliendo metas">
+                    <span class="text-base animate-bounce">🔥</span>
+                    <span id="streakBadgeText">0 Días</span>
+                </div>
+
+                <!-- Botón Modal Webhook / Asistente de Voz -->
+                <button onclick="openWebhookModal()" class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-cyan-300 text-xs font-semibold transition-all hover:border-cyan-500/50" title="Configurar webhook para captura por voz">
+                    <i class="fa-solid fa-microphone-lines text-cyan-400"></i>
+                    <span class="hidden sm:inline">Voz / Webhook</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 space-y-6">
+
+        <!-- 1. DASHBOARD DE PRODUCTIVIDAD (Métricas & Progreso) -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-4" id="statsDashboard">
+            
+            <!-- Tarjeta 1: Progreso Global del Día -->
+            <div class="glass-card p-5 rounded-2xl flex flex-col justify-between border-slate-800/80 relative overflow-hidden">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Progreso Diario</span>
+                    <span class="text-xs font-mono font-bold text-cyan-400 px-2 py-0.5 rounded-md bg-cyan-950/60 border border-cyan-800/50" id="todayTaskFraction">0/0</span>
+                </div>
+                <div>
+                    <div class="flex items-baseline gap-2 mb-2">
+                        <span class="text-3xl font-black text-white font-mono" id="todayPercentageText">0%</span>
+                        <span class="text-xs text-slate-400">completado</span>
+                    </div>
+                    <!-- Barra de progreso -->
+                    <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                        <div id="todayProgressBar" class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 rounded-full transition-all duration-500 w-0"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta 2: Categoría Trabajo (Work) -->
+            <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-slate-800/80 cursor-pointer hover:border-purple-500/40" onclick="switchCategory('work')">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center text-xl shrink-0">
+                        💼
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-purple-300 block">Trabajo</span>
+                        <span class="text-xs text-slate-400 font-mono" id="statWorkCount">0 / 0 listas</span>
+                    </div>
+                </div>
+                <span class="text-lg font-bold font-mono text-purple-400" id="statWorkPct">0%</span>
+            </div>
+
+            <!-- Tarjeta 3: Categoría Casa (Home) -->
+            <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-slate-800/80 cursor-pointer hover:border-emerald-500/40" onclick="switchCategory('home')">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xl shrink-0">
+                        🏠
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-emerald-300 block">Casa & Bienestar</span>
+                        <span class="text-xs text-slate-400 font-mono" id="statHomeCount">0 / 0 listas</span>
+                    </div>
+                </div>
+                <span class="text-lg font-bold font-mono text-emerald-400" id="statHomePct">0%</span>
+            </div>
+
+            <!-- Tarjeta 4: Categoría Diligencias (Errands) -->
+            <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-slate-800/80 cursor-pointer hover:border-cyan-500/40" onclick="switchCategory('errands')">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xl shrink-0">
+                        🏃‍♂️
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-cyan-300 block">Diligencias</span>
+                        <span class="text-xs text-slate-400 font-mono" id="statErrandsCount">0 / 0 listas</span>
+                    </div>
+                </div>
+                <span class="text-lg font-bold font-mono text-cyan-400" id="statErrandsPct">0%</span>
+            </div>
+
+        </section>
+
+        <!-- 2. PRIORIDADES TOP 3 DEL DÍA (FOCO TÁCTICO) -->
+        <section id="topPrioritiesBox" class="glass-panel rounded-2xl p-4 sm:p-5 border border-amber-500/30 bg-amber-950/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-amber-400 text-lg">⭐</span>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-amber-300">Prioridades Top 3 del Día</h2>
+                </div>
+                <span class="text-[11px] text-slate-400">Metas no negociables</span>
+            </div>
+            <div id="topPrioritiesList" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <p class="text-xs text-slate-400 italic py-2">Sin prioridades marcadas para hoy. Usa el selector ⭐ al crear una tarea.</p>
+            </div>
+        </section>
+
+        <!-- 3. BARRA DE ENTRADA RÁPIDA (Siempre visible / un solo toque) -->
+        <section class="glass-panel p-4 rounded-2xl border border-slate-800 shadow-xl">
+            <form id="quickAddForm" onsubmit="handleQuickAdd(event)" class="space-y-3">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                    
+                    <!-- Campo de texto principal -->
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-plus absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" 
+                               id="taskTitleInput" 
+                               placeholder="Agregar nueva tarea o dictar nota... (ej: 'Comprar repuesto')" 
+                               required
+                               autocomplete="off"
+                               class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium">
+                    </div>
+
+                    <!-- Selector de Prioridad Rápida ⭐ -->
+                    <div class="flex items-center gap-2">
+                        <button type="button" 
+                                id="priorityToggleBtn"
+                                onclick="toggleInputPriority()"
+                                class="px-3 py-3 rounded-xl border border-slate-700 text-xs font-semibold text-slate-400 hover:text-amber-300 hover:border-amber-500/50 flex items-center justify-center gap-1.5 transition-all bg-slate-900/60"
+                                title="Marcar como una de las 3 prioridades del día">
+                            <span id="priorityStarIcon">☆</span>
+                            <span class="hidden sm:inline">Top 3</span>
+                        </button>
+
+                        <!-- Botón Enviar -->
+                        <button type="submit" 
+                                class="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 px-6 py-3 rounded-xl font-bold text-sm shadow-lg glow-cyan flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0">
+                            <span>Añadir</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Selector de Categorías (Píldoras táctiles con un toque) -->
+                <div class="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-slate-800/60 text-xs">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-slate-500 text-[11px] font-semibold">Categoría:</span>
+                        
+                        <label class="cursor-pointer">
+                            <input type="radio" name="quickCategory" value="work" checked class="hidden peer">
+                            <span class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 peer-checked:bg-purple-500/20 peer-checked:border-purple-500 peer-checked:text-purple-300 font-medium inline-flex items-center gap-1.5 transition-all">
+                                💼 Trabajo
+                            </span>
+                        </label>
+
+                        <label class="cursor-pointer">
+                            <input type="radio" name="quickCategory" value="home" class="hidden peer">
+                            <span class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 peer-checked:bg-emerald-500/20 peer-checked:border-emerald-500 peer-checked:text-emerald-300 font-medium inline-flex items-center gap-1.5 transition-all">
+                                🏠 Casa & Bienestar
+                            </span>
+                        </label>
+
+                        <label class="cursor-pointer">
+                            <input type="radio" name="quickCategory" value="errands" class="hidden peer">
+                            <span class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 peer-checked:bg-cyan-500/20 peer-checked:border-cyan-500 peer-checked:text-cyan-300 font-medium inline-flex items-center gap-1.5 transition-all">
+                                🏃‍♂️ Diligencias
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Fecha de la tarea (Por defecto Hoy) -->
+                    <div class="flex items-center gap-1.5 text-slate-400 text-xs">
+                        <i class="fa-regular fa-calendar text-slate-500"></i>
+                        <input type="date" id="taskDateInput" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-300 text-xs focus:outline-none focus:border-cyan-500">
+                    </div>
+                </div>
+
+            </form>
+        </section>
+
+        <!-- 4. NAVEGACIÓN Y FILTROS CENTRALIZADOS -->
+        <section class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            
+            <!-- Pestañas de Categoría -->
+            <div class="flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800 overflow-x-auto">
+                <button onclick="switchCategory('all')" id="tab_all" class="category-tab px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-slate-800 transition-all shrink-0">
+                    🌐 Todos
+                </button>
+                <button onclick="switchCategory('work')" id="tab_work" class="category-tab px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all shrink-0 flex items-center gap-1.5">
+                    💼 Trabajo
+                </button>
+                <button onclick="switchCategory('home')" id="tab_home" class="category-tab px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all shrink-0 flex items-center gap-1.5">
+                    🏠 Casa
+                </button>
+                <button onclick="switchCategory('errands')" id="tab_errands" class="category-tab px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all shrink-0 flex items-center gap-1.5">
+                    🏃‍♂️ Diligencias
+                </button>
+            </div>
+
+            <!-- Filtro de Fecha (Hoy / Todos) -->
+            <div class="flex items-center gap-1.5 text-xs">
+                <button onclick="switchDateFilter('today')" id="dateFilterToday" class="date-tab px-3 py-1.5 rounded-lg bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 font-bold transition-all">
+                    Hoy
+                </button>
+                <button onclick="switchDateFilter('all')" id="dateFilterAll" class="date-tab px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 font-medium hover:text-white transition-all">
+                    Todas las Fechas
+                </button>
+            </div>
+
+        </section>
+
+        <!-- 5. LISTA DINÁMICA DE TAREAS -->
+        <section class="space-y-3" id="tasksListContainer">
+            <div class="text-center py-12 text-slate-500 text-sm">
+                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-cyan-400 mb-2"></i>
+                <p>Cargando agenda Jarvis...</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER / ESTADO INFERIOR -->
+    <footer class="glass-panel border-t border-slate-800/80 px-4 py-3 text-center text-xs text-slate-500">
+        <p>Jarvis Personal OS &copy; 2026 &bull; Optimizado para Escritorio y Mobile APK</p>
+    </footer>
+
+    <!-- MODAL DE CAPTURA POR VOZ & WEBHOOK API -->
+    <div id="webhookModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel border border-slate-700 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-cyan-400 text-xl"><i class="fa-solid fa-bolt"></i></span>
+                    <h3 class="text-base font-bold text-white">API de Voz y Webhook Jarvis</h3>
+                </div>
+                <button onclick="closeWebhookModal()" class="text-slate-400 hover:text-white p-1 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Conecta Jarvis con <strong>Google Assistant</strong>, <strong>Gemini</strong>, <strong>n8n</strong> o <strong>Atajos de iOS/Android</strong> para dictar tareas por voz que aparezcan al instante en tu agenda:
+            </p>
+
+            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 font-mono text-xs space-y-2 text-slate-300">
+                <div class="text-[11px] text-cyan-400 font-bold uppercase">Endpoint POST:</div>
+                <div class="select-all text-white bg-slate-900 p-2 rounded-lg break-all" id="webhookUrlDisplay">/api/quick-add</div>
+
+                <div class="text-[11px] text-emerald-400 font-bold uppercase pt-1">Header de Seguridad:</div>
+                <div class="select-all text-emerald-300 bg-slate-900 p-2 rounded-lg break-all">X-API-Key: {{ api_token }}</div>
+
+                <div class="text-[11px] text-purple-400 font-bold uppercase pt-1">Payload JSON de ejemplo:</div>
+                <pre class="bg-slate-900 p-2.5 rounded-lg text-slate-300 overflow-x-auto">{
+  "text": "Comprar café en la esquina",
+  "category": "errands"
+}</pre>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="copyCurlExample()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copiar comando cURL</span>
+                </button>
+                <button onclick="closeWebhookModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-4 py-2 rounded-xl text-xs transition-all">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO SINTETIZADOR PARA FEEDBACK TÁCTIL (Web Audio API) -->
+    <script>
+        // Configuración y Estado Global de la App
+        const state = {
+            category: 'all', // 'all' | 'work' | 'home' | 'errands'
+            dateFilter: 'today', // 'today' | 'all'
+            inputPriority: 0, // 0 = normal, 1 = Top Priority
+            apiToken: "{{ api_token }}",
+            tasks: [],
+            stats: null
+        };
+
+        // Generador de sonido sutil de logro al completar tarea (Web Audio API sin archivos externos)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSuccessChime() {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+
+                // Vibración táctil si el dispositivo móvil lo soporta
+                if (navigator.vibrate) {
+                    navigator.vibrate(35);
+                }
+            } catch (e) {
+                // Silencioso si el navegador bloquea audio inicial
+            }
+        }
+
+        // ==============================================================================
+        // Inicialización
+        // ==============================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            initDateInputs();
+            loadTasks();
+            updateWebhookUrl();
+        });
+
+        function initDateInputs() {
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            const dateInput = document.getElementById('taskDateInput');
+            if (dateInput) {
+                dateInput.value = dateStr;
+            }
+
+            // Formato de fecha en header
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const formatted = today.toLocaleDateString('es-ES', options);
+            const dateDisplay = document.getElementById('currentDateDisplay');
+            if (dateDisplay) {
+                dateDisplay.innerText = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+            }
+        }
+
+        function updateWebhookUrl() {
+            const fullUrl = window.location.origin + '/api/quick-add';
+            const display = document.getElementById('webhookUrlDisplay');
+            if (display) {
+                display.innerText = fullUrl;
+            }
+        }
+
+        // ==============================================================================
+        // Llamadas API (Fetch)
+        // ==============================================================================
+
+        async function loadTasks() {
+            try {
+                const params = new URLSearchParams({
+                    category: state.category,
+                    date: state.dateFilter
+                });
+                const res = await fetch(`/api/tasks?${params.toString()}`);
+                const data = await res.json();
+                if (data.success) {
+                    state.tasks = data.tasks;
+                    state.stats = data.stats;
+                    renderTasks();
+                    renderStats();
+                }
+            } catch (err) {
+                console.error('Error al cargar tareas:', err);
+            }
+        }
+
+        async function handleQuickAdd(e) {
+            e.preventDefault();
+            const titleInput = document.getElementById('taskTitleInput');
+            const title = titleInput.value.trim();
+            if (!title) return;
+
+            const categoryRadio = document.querySelector('input[name="quickCategory"]:checked');
+            const category = categoryRadio ? categoryRadio.value : 'work';
+            const dateInput = document.getElementById('taskDateInput');
+            const taskDate = dateInput.value || new Date().toISOString().split('T')[0];
+
+            try {
+                const res = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        category: category,
+                        date: taskDate,
+                        priority: state.inputPriority
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    titleInput.value = '';
+                    state.inputPriority = 0;
+                    updatePriorityUI();
+                    loadTasks();
+                    
+                    if (navigator.vibrate) {
+                        navigator.vibrate(20);
+                    }
+                }
+            } catch (err) {
+                console.error('Error al crear tarea:', err);
+            }
+        }
+
+        async function toggleTask(taskId) {
+            try {
+                // Optimistic UI update
+                const task = state.tasks.find(t => t.id === taskId);
+                if (task) {
+                    task.completed = task.completed ? 0 : 1;
+                    if (task.completed) {
+                        playSuccessChime();
+                    }
+                    renderTasks();
+                }
+
+                const res = await fetch(`/api/tasks/${taskId}/toggle`, { method: 'PATCH' });
+                const data = await res.json();
+                if (data.success) {
+                    state.stats = data.stats;
+                    renderStats();
+                }
+            } catch (err) {
+                console.error('Error al alternar tarea:', err);
+                loadTasks();
+            }
+        }
+
+        async function deleteTask(taskId, event) {
+            if (event) event.stopPropagation();
+            if (!confirm('¿Deseas eliminar esta tarea?')) return;
+            try {
+                const res = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    loadTasks();
+                }
+            } catch (err) {
+                console.error('Error al eliminar tarea:', err);
+            }
+        }
+
+        // ==============================================================================
+        // Renderizado UI
+        // ==============================================================================
+
+        function renderStats() {
+            if (!state.stats) return;
+            const s = state.stats;
+
+            // Racha
+            const streakText = document.getElementById('streakBadgeText');
+            if (streakText) {
+                streakText.innerText = `${s.streak_days} ${s.streak_days === 1 ? 'Día' : 'Días'}`;
+            }
+
+            // Progreso diario
+            document.getElementById('todayTaskFraction').innerText = `${s.today.completed}/${s.today.total}`;
+            document.getElementById('todayPercentageText').innerText = `${s.today.percentage}%`;
+            document.getElementById('todayProgressBar').style.width = `${s.today.percentage}%`;
+
+            // Categorías
+            if (s.categories) {
+                const w = s.categories.work || { completed: 0, total: 0, percentage: 0 };
+                document.getElementById('statWorkCount').innerText = `${w.completed}/${w.total} hechas`;
+                document.getElementById('statWorkPct').innerText = `${w.percentage}%`;
+
+                const h = s.categories.home || { completed: 0, total: 0, percentage: 0 };
+                document.getElementById('statHomeCount').innerText = `${h.completed}/${h.total} hechas`;
+                document.getElementById('statHomePct').innerText = `${h.percentage}%`;
+
+                const e = s.categories.errands || { completed: 0, total: 0, percentage: 0 };
+                document.getElementById('statErrandsCount').innerText = `${e.completed}/${e.total} hechas`;
+                document.getElementById('statErrandsPct').innerText = `${e.percentage}%`;
+            }
+
+            // Prioridades Top 3
+            const topBox = document.getElementById('topPrioritiesList');
+            if (s.top_priorities && s.top_priorities.length > 0) {
+                topBox.innerHTML = s.top_priorities.map((item, idx) => `
+                    <div class="flex items-center gap-2.5 p-3 rounded-xl ${item.completed ? 'bg-amber-950/20 border border-amber-900/40 opacity-60' : 'bg-slate-900/90 border border-amber-500/40 shadow-sm'}">
+                        <span class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0">
+                            #${idx + 1}
+                        </span>
+                        <span class="text-xs font-semibold ${item.completed ? 'line-through text-slate-500' : 'text-slate-200'} truncate">
+                            ${escapeHtml(item.title)}
+                        </span>
+                    </div>
+                `).join('');
+            } else {
+                topBox.innerHTML = `<p class="text-xs text-slate-400 italic py-1 col-span-3">No hay prioridades Top 3 asignadas para hoy.</p>`;
+            }
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasksListContainer');
+            if (!container) return;
+
+            if (state.tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-card rounded-2xl p-10 text-center space-y-3">
+                        <div class="w-16 h-16 rounded-full bg-slate-800/80 text-cyan-400 text-2xl flex items-center justify-center mx-auto">
+                            <i class="fa-solid fa-list-check"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-white">Bandeja despejada</h3>
+                        <p class="text-xs text-slate-400 max-w-sm mx-auto">
+                            No hay tareas pendientes en esta vista. Disfruta tu tiempo o añade una nueva tarea con el formulario superior.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            const categoryConfig = {
+                work: { label: 'Trabajo', icon: '💼', color: 'text-purple-400', bg: 'bg-purple-950/40 border-purple-800/40' },
+                home: { label: 'Casa', icon: '🏠', color: 'text-emerald-400', bg: 'bg-emerald-950/40 border-emerald-800/40' },
+                errands: { label: 'Diligencia', icon: '🏃‍♂️', color: 'text-cyan-400', bg: 'bg-cyan-950/40 border-cyan-800/40' }
+            };
+
+            container.innerHTML = state.tasks.map(task => {
+                const cat = categoryConfig[task.category] || categoryConfig.work;
+                const isTopPriority = task.priority > 0;
+
+                return `
+                    <div class="glass-card rounded-xl p-3.5 sm:p-4 flex items-center justify-between gap-3 ${task.completed ? 'opacity-50 border-slate-900 bg-slate-950/40' : 'border-slate-800/80'}">
+                        
+                        <div class="flex items-center gap-3.5 flex-1 min-w-0" onclick="toggleTask(${task.id})">
+                            <input type="checkbox" 
+                                   class="custom-checkbox" 
+                                   ${task.completed ? 'checked' : ''} 
+                                   onclick="event.stopPropagation(); toggleTask(${task.id})">
+                            
+                            <div class="flex-1 min-w-0 cursor-pointer">
+                                <div class="flex items-center gap-2 flex-wrap mb-1">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border ${cat.bg} ${cat.color} flex items-center gap-1">
+                                        <span>${cat.icon}</span>
+                                        <span>${cat.label}</span>
+                                    </span>
+
+                                    ${isTopPriority ? `
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-amber-950/60 border-amber-500/50 text-amber-300 flex items-center gap-1">
+                                            <span>⭐ Top ${task.priority}</span>
+                                        </span>
+                                    ` : ''}
+
+                                    <span class="text-[11px] text-slate-500 font-mono">
+                                        ${task.date}
+                                    </span>
+                                </div>
+
+                                <p class="text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-slate-100'} truncate">
+                                    ${escapeHtml(task.title)}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Botón Eliminar -->
+                        <div class="flex items-center gap-1">
+                            <button onclick="deleteTask(${task.id}, event)" 
+                                    class="w-9 h-9 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-colors text-sm"
+                                    title="Eliminar tarea">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==============================================================================
+        // Controles de Filtros & Prioridad
+        // ==============================================================================
+
+        function switchCategory(cat) {
+            state.category = cat;
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('bg-slate-800', 'text-white', 'font-bold');
+                tab.classList.add('text-slate-400', 'font-medium');
+            });
+
+            const activeTab = document.getElementById(`tab_${cat}`);
+            if (activeTab) {
+                activeTab.classList.remove('text-slate-400', 'font-medium');
+                activeTab.classList.add('bg-slate-800', 'text-white', 'font-bold');
+            }
+            loadTasks();
+        }
+
+        function switchDateFilter(filter) {
+            state.dateFilter = filter;
+            const btnToday = document.getElementById('dateFilterToday');
+            const btnAll = document.getElementById('dateFilterAll');
+
+            if (filter === 'today') {
+                btnToday.className = 'date-tab px-3 py-1.5 rounded-lg bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 font-bold transition-all';
+                btnAll.className = 'date-tab px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 font-medium hover:text-white transition-all';
+            } else {
+                btnAll.className = 'date-tab px-3 py-1.5 rounded-lg bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 font-bold transition-all';
+                btnToday.className = 'date-tab px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 font-medium hover:text-white transition-all';
+            }
+            loadTasks();
+        }
+
+        function toggleInputPriority() {
+            state.inputPriority = (state.inputPriority + 1) % 4; // ciclo 0 -> 1 -> 2 -> 3 -> 0
+            updatePriorityUI();
+        }
+
+        function updatePriorityUI() {
+            const btn = document.getElementById('priorityToggleBtn');
+            const star = document.getElementById('priorityStarIcon');
+            if (state.inputPriority > 0) {
+                btn.className = 'px-3 py-3 rounded-xl border border-amber-500/60 bg-amber-500/20 text-xs font-bold text-amber-300 flex items-center justify-center gap-1.5 transition-all shadow-sm';
+                star.innerText = `⭐ #${state.inputPriority}`;
+            } else {
+                btn.className = 'px-3 py-3 rounded-xl border border-slate-700 text-xs font-semibold text-slate-400 hover:text-amber-300 hover:border-amber-500/50 flex items-center justify-center gap-1.5 transition-all bg-slate-900/60';
+                star.innerText = '☆';
+            }
+        }
+
+        // ==============================================================================
+        // Modal Webhook / Asistente de Voz
+        // ==============================================================================
+
+        function openWebhookModal() {
+            document.getElementById('webhookModal').classList.remove('hidden');
+        }
+
+        function closeWebhookModal() {
+            document.getElementById('webhookModal').classList.add('hidden');
+        }
+
+        function copyCurlExample() {
+            const host = window.location.origin;
+            const curl = `curl -X POST "${host}/api/quick-add" \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: ${state.apiToken}" \\
+  -d '{"text": "Comprar café en la esquina", "category": "errands"}'`;
+
+            navigator.clipboard.writeText(curl).then(() => {
+                alert('¡Comando cURL copiado al portapapeles! Úsalo en tu automatización de n8n, Google Assistant o Atajos.');
+            }).catch(err => {
+                prompt('Copia manualmente este comando cURL:', curl);
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

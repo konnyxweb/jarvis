@@ -38,7 +38,8 @@
                             cyan: '#06b6d4',
                             emerald: '#10b981',
                             purple: '#8b5cf6',
-                            amber: '#f59e0b'
+                            amber: '#f59e0b',
+                            rose: '#f43f5e'
                         }
                     }
                 }
@@ -84,6 +85,9 @@
         }
         .glow-emerald {
             box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
+        }
+        .glow-rose {
+            box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.35);
         }
         .custom-checkbox {
             appearance: none;
@@ -178,12 +182,12 @@
     <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 space-y-6">
 
         <!-- 1. DASHBOARD DE PRODUCTIVIDAD (Métricas & Progreso) -->
-        <section class="grid grid-cols-1 md:grid-cols-4 gap-4" id="statsDashboard">
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4" id="statsDashboard">
             
             <!-- Tarjeta 1: Progreso Global del Día -->
-            <div class="glass-card p-5 rounded-2xl flex flex-col justify-between border-slate-800/80 relative overflow-hidden">
+            <div class="glass-card p-4 sm:p-5 rounded-2xl flex flex-col justify-between border-slate-800/80 relative overflow-hidden sm:col-span-2 lg:col-span-1">
                 <div class="flex justify-between items-start mb-2">
-                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Progreso Diario</span>
+                    <span class="text-[11px] uppercase font-bold text-slate-400 tracking-wider">Progreso Diario</span>
                     <span class="text-xs font-mono font-bold text-cyan-400 px-2 py-0.5 rounded-md bg-cyan-950/60 border border-cyan-800/50" id="todayTaskFraction">0/0</span>
                 </div>
                 <div>
@@ -201,7 +205,7 @@
             <!-- Tarjeta 2: Categoría Trabajo (Work) -->
             <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-slate-800/80 cursor-pointer hover:border-purple-500/40" onclick="switchCategory('work')">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center text-xl shrink-0">
+                    <div class="w-11 h-11 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center text-xl shrink-0">
                         💼
                     </div>
                     <div>
@@ -215,21 +219,35 @@
             <!-- Tarjeta 3: Categoría Casa (Home) -->
             <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-slate-800/80 cursor-pointer hover:border-emerald-500/40" onclick="switchCategory('home')">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xl shrink-0">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xl shrink-0">
                         🏠
                     </div>
                     <div>
-                        <span class="text-xs font-bold text-emerald-300 block">Casa & Bienestar</span>
+                        <span class="text-xs font-bold text-emerald-300 block">Casa</span>
                         <span class="text-xs text-slate-400 font-mono" id="statHomeCount">0 / 0 listas</span>
                     </div>
                 </div>
                 <span class="text-lg font-bold font-mono text-emerald-400" id="statHomePct">0%</span>
             </div>
 
-            <!-- Tarjeta 4: Categoría Diligencias (Errands) -->
+            <!-- Tarjeta 4: Categoría Salud & Bienestar (Health) -->
+            <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-slate-800/80 cursor-pointer hover:border-rose-500/40" onclick="switchCategory('health')">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center text-xl shrink-0">
+                        🩺
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-rose-300 block">Salud & Bienestar</span>
+                        <span class="text-xs text-slate-400 font-mono" id="statHealthCount">0 / 0 listas</span>
+                    </div>
+                </div>
+                <span class="text-lg font-bold font-mono text-rose-400" id="statHealthPct">0%</span>
+            </div>
+
+            <!-- Tarjeta 5: Categoría Diligencias (Errands) -->
             <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-slate-800/80 cursor-pointer hover:border-cyan-500/40" onclick="switchCategory('errands')">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xl shrink-0">
+                    <div class="w-11 h-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xl shrink-0">
                         🏃‍♂️
                     </div>
                     <div>
@@ -266,7 +284,7 @@
                         <i class="fa-solid fa-plus absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
                         <input type="text" 
                                id="taskTitleInput" 
-                               placeholder="Agregar nueva tarea o dictar nota... (ej: 'Comprar repuesto')" 
+                               placeholder="Agregar nueva tarea o dictar nota... (ej: 'Control médico', 'Entrenar 30 min')" 
                                required
                                autocomplete="off"
                                class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium">
@@ -308,7 +326,14 @@
                         <label class="cursor-pointer">
                             <input type="radio" name="quickCategory" value="home" class="hidden peer">
                             <span class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 peer-checked:bg-emerald-500/20 peer-checked:border-emerald-500 peer-checked:text-emerald-300 font-medium inline-flex items-center gap-1.5 transition-all">
-                                🏠 Casa & Bienestar
+                                🏠 Casa
+                            </span>
+                        </label>
+
+                        <label class="cursor-pointer">
+                            <input type="radio" name="quickCategory" value="health" class="hidden peer">
+                            <span class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 peer-checked:bg-rose-500/20 peer-checked:border-rose-500 peer-checked:text-rose-300 font-medium inline-flex items-center gap-1.5 transition-all">
+                                🩺 Salud
                             </span>
                         </label>
 
@@ -343,6 +368,9 @@
                 </button>
                 <button onclick="switchCategory('home')" id="tab_home" class="category-tab px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all shrink-0 flex items-center gap-1.5">
                     🏠 Casa
+                </button>
+                <button onclick="switchCategory('health')" id="tab_health" class="category-tab px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all shrink-0 flex items-center gap-1.5">
+                    🩺 Salud
                 </button>
                 <button onclick="switchCategory('errands')" id="tab_errands" class="category-tab px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all shrink-0 flex items-center gap-1.5">
                     🏃‍♂️ Diligencias
@@ -400,10 +428,10 @@
                 <div class="text-[11px] text-emerald-400 font-bold uppercase pt-1">Header de Seguridad:</div>
                 <div class="select-all text-emerald-300 bg-slate-900 p-2 rounded-lg break-all">X-API-Key: {{ api_token }}</div>
 
-                <div class="text-[11px] text-purple-400 font-bold uppercase pt-1">Payload JSON de ejemplo:</div>
+                <div class="text-[11px] text-rose-400 font-bold uppercase pt-1">Payload JSON de ejemplo (Salud / Trabajo / etc.):</div>
                 <pre class="bg-slate-900 p-2.5 rounded-lg text-slate-300 overflow-x-auto">{
-  "text": "Comprar café en la esquina",
-  "category": "errands"
+  "text": "Tomar vitaminas y agendar chequeo médico",
+  "category": "health"
 }</pre>
             </div>
 
@@ -423,7 +451,7 @@
     <script>
         // Configuración y Estado Global de la App
         const state = {
-            category: 'all', // 'all' | 'work' | 'home' | 'errands'
+            category: 'all', // 'all' | 'work' | 'home' | 'health' | 'errands'
             dateFilter: 'today', // 'today' | 'all'
             inputPriority: 0, // 0 = normal, 1 = Top Priority
             apiToken: "{{ api_token }}",
@@ -621,6 +649,12 @@
                 document.getElementById('statHomeCount').innerText = `${h.completed}/${h.total} hechas`;
                 document.getElementById('statHomePct').innerText = `${h.percentage}%`;
 
+                const hl = s.categories.health || { completed: 0, total: 0, percentage: 0 };
+                const statHealthCountEl = document.getElementById('statHealthCount');
+                const statHealthPctEl = document.getElementById('statHealthPct');
+                if (statHealthCountEl) statHealthCountEl.innerText = `${hl.completed}/${hl.total} hechas`;
+                if (statHealthPctEl) statHealthPctEl.innerText = `${hl.percentage}%`;
+
                 const e = s.categories.errands || { completed: 0, total: 0, percentage: 0 };
                 document.getElementById('statErrandsCount').innerText = `${e.completed}/${e.total} hechas`;
                 document.getElementById('statErrandsPct').innerText = `${e.percentage}%`;
@@ -666,6 +700,7 @@
             const categoryConfig = {
                 work: { label: 'Trabajo', icon: '💼', color: 'text-purple-400', bg: 'bg-purple-950/40 border-purple-800/40' },
                 home: { label: 'Casa', icon: '🏠', color: 'text-emerald-400', bg: 'bg-emerald-950/40 border-emerald-800/40' },
+                health: { label: 'Salud', icon: '🩺', color: 'text-rose-400', bg: 'bg-rose-950/40 border-rose-800/40' },
                 errands: { label: 'Diligencia', icon: '🏃‍♂️', color: 'text-cyan-400', bg: 'bg-cyan-950/40 border-cyan-800/40' }
             };
 
@@ -691,7 +726,7 @@
 
                                     ${isTopPriority ? `
                                         <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-amber-950/60 border-amber-500/50 text-amber-300 flex items-center gap-1">
-                                            <span>⭐ Top ${task.priority}</span>
+                                             <span>⭐ Top ${task.priority}</span>
                                         </span>
                                     ` : ''}
 
@@ -788,7 +823,7 @@
             const curl = `curl -X POST "${host}/api/quick-add" \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: ${state.apiToken}" \\
-  -d '{"text": "Comprar café en la esquina", "category": "errands"}'`;
+  -d '{"text": "Tomar vitaminas y agendar chequeo", "category": "health"}'`;
 
             navigator.clipboard.writeText(curl).then(() => {
                 alert('¡Comando cURL copiado al portapapeles! Úsalo en tu automatización de n8n, Google Assistant o Atajos.');

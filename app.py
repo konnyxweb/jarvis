@@ -21,7 +21,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
-            category TEXT NOT NULL CHECK(category IN ('work', 'home', 'errands')),
+            category TEXT NOT NULL CHECK(category IN ('work', 'home', 'errands', 'health')),
             date DATE NOT NULL,
             priority INTEGER DEFAULT 0,
             completed BOOLEAN DEFAULT 0,
@@ -29,6 +29,32 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    
+    # Comprobar si la tabla existente tiene la restricción antigua sin 'health' y migrarla
+    cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='tasks'")
+    table_def = cursor.fetchone()
+    if table_def and table_def['sql'] and "health" not in table_def['sql']:
+        cursor.execute("PRAGMA foreign_keys=off")
+        cursor.execute('''
+            CREATE TABLE tasks_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL CHECK(category IN ('work', 'home', 'errands', 'health')),
+                date DATE NOT NULL,
+                priority INTEGER DEFAULT 0,
+                completed BOOLEAN DEFAULT 0,
+                completed_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        cursor.execute('''
+            INSERT INTO tasks_new (id, title, category, date, priority, completed, completed_at, created_at)
+            SELECT id, title, category, date, priority, completed, completed_at, created_at FROM tasks
+        ''')
+        cursor.execute("DROP TABLE tasks")
+        cursor.execute("ALTER TABLE tasks_new RENAME TO tasks")
+        conn.commit()
+        cursor.execute("PRAGMA foreign_keys=on")
     
     # Sembrar datos iniciales si la tabla está vacía
     cursor.execute('SELECT COUNT(*) as count FROM tasks')
@@ -43,10 +69,14 @@ def init_db():
             ("Planificación de sprint semanal", "work", today_str, 3, 1, f"{today_str} 09:30:00"),
             ("Actualizar documentación de API", "work", today_str, 0, 0, None),
             
-            # Tareas del Hogar & Bienestar
-            ("30 minutos de entrenamiento físico", "home", today_str, 0, 1, f"{today_str} 07:15:00"),
-            ("Mantenimiento y limpieza del espacio de trabajo", "home", today_str, 0, 0, None),
-            ("Planificar comidas saludables de la semana", "home", today_str, 0, 0, None),
+            # Tareas del Hogar
+            ("Mantenimiento y orden del espacio de trabajo", "home", today_str, 0, 0, None),
+            ("Planificar logística y compras del hogar", "home", today_str, 0, 0, None),
+            
+            # Tareas de Salud & Bienestar
+            ("30 minutos de entrenamiento físico o cardio", "health", today_str, 0, 1, f"{today_str} 07:15:00"),
+            ("Tomar 2L de agua y suplementos vitamínicos", "health", today_str, 0, 0, None),
+            ("Chequeo médico o control de bienestar", "health", today_str, 0, 0, None),
             
             # Diligencias y Calle
             ("Retirar paquete en oficina de envíos", "errands", today_str, 0, 0, None),
@@ -84,8 +114,8 @@ def calculate_productivity_stats():
     
     today_percentage = round((completed_today / total_today * 100), 1) if total_today > 0 else 0
     
-    # Desglose por categoría para hoy
-    categories = ['work', 'home', 'errands']
+    # Desglose por categoría para hoy (Trabajo, Casa, Diligencias, Salud)
+    categories = ['work', 'home', 'errands', 'health']
     cat_stats = {}
     for cat in categories:
         cursor.execute('SELECT COUNT(*) as total FROM tasks WHERE date = ? AND category = ?', (today_str, cat))
@@ -120,7 +150,7 @@ def calculate_productivity_stats():
         
     # Prioridades Top 3 de hoy
     cursor.execute('''
-        SELECT id, title, completed, priority 
+        SELECT id, title, category, completed, priority 
         FROM tasks 
         WHERE date = ? AND priority > 0
         ORDER BY priority ASC
@@ -173,7 +203,7 @@ def get_tasks():
         query += ' AND date = ?'
         params.append(date_filter)
         
-    if category in ['work', 'home', 'errands']:
+    if category in ['work', 'home', 'errands', 'health']:
         query += ' AND category = ?'
         params.append(category)
         
@@ -209,7 +239,7 @@ def create_task():
     if not title:
         return jsonify({'success': False, 'error': 'El título de la tarea es requerido'}), 400
         
-    if category not in ['work', 'home', 'errands']:
+    if category not in ['work', 'home', 'errands', 'health']:
         category = 'work'
         
     conn = get_db()
@@ -312,11 +342,19 @@ def quick_add_voice_webhook():
     task_date = body_data.get('date', date.today().isoformat())
     
     # Auto-categorización inteligente si no se especifica categoría
-    if category not in ['work', 'home', 'errands']:
+    if category not in ['work', 'home', 'errands', 'health']:
         lower_text = raw_text.lower()
-        if any(w in lower_text for w in ['comprar', 'supermercado', 'farmacia', 'banco', 'recoger', 'calle', 'envío', 'tienda', 'pagar']):
+        if any(w in lower_text for w in [
+            'salud', 'médico', 'medico', 'medicina', 'pastilla', 'pastillas', 
+            'cita médica', 'dentista', 'doctor', 'doctora', 'vitaminas', 
+            'terapia', 'farmacia', 'entrenar', 'ejercicio', 'gym', 'gimnasio', 
+            'cardio', 'correr', 'caminar', 'agua', 'dormir', 'peso', 'presión', 
+            'dieta', 'estiramiento', 'bienestar', 'psicólogo', 'nutricionista'
+        ]):
+            category = 'health'
+        elif any(w in lower_text for w in ['comprar', 'supermercado', 'banco', 'recoger', 'calle', 'envío', 'tienda', 'pagar', 'trámite', 'mensajería']):
             category = 'errands'
-        elif any(w in lower_text for w in ['casa', 'limpiar', 'lavar', 'cocinar', 'ejercicio', 'entrenar', 'dormir', 'comida', 'agua', 'ordenar']):
+        elif any(w in lower_text for w in ['casa', 'limpiar', 'lavar', 'cocinar', 'comida', 'ordenar', 'reparar', 'planta']):
             category = 'home'
         else:
             category = 'work'

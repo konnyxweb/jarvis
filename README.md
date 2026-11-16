@@ -6,10 +6,11 @@
 
 ## 🌟 Características Principales
 
-### 1. 💼 🏠 🏃‍♂️ 3 Áreas de Enfoque Centralizadas
+### 1. 💼 🏠 🩺 🏃‍♂️ 4 Áreas de Enfoque Centralizadas
 - **💼 Trabajo y Proyectos:** Prioridades Top 3 del día y tareas operativas.
-- **🏠 Casa y Bienestar:** Hábitos, mantenimiento del hogar y bienestar.
-- **🏃‍♂️ Diligencias y Calle:** Tareas rápidas fuera de casa (compras, trámites).
+- **🏠 Casa:** Mantenimiento del hogar, logística doméstica y espacios.
+- **🩺 Salud y Bienestar:** Hábitos saludables, entrenamientos, hidratación, chequeos médicos y suplementos.
+- **🏃‍♂️ Diligencias y Calle:** Tareas rápidas fuera de casa (compras, gestiones, envíos).
 
 ### 2. 📊 Dashboard de Productividad y Gamificación
 - **Contador y porcentaje en tiempo real** de tareas completadas por categoría.

@@ -45,6 +45,24 @@ Jarvis incluye:
 
 ---
 
+## 🗄️ Base de Datos Persistente (PostgreSQL en la Nube / SQLite Local)
+
+Jarvis cuenta con una arquitectura híbrida que no requiere configuración manual:
+- **En tu equipo local:** Utiliza automáticamente **SQLite** (`jarvis.db`) sin instalar nada adicional.
+- **En producción (Render / Neon / Supabase):** Conecta automáticamente a **PostgreSQL** permanente a través de la variable de entorno estándar `DATABASE_URL`. Al conectarse por primera vez, Jarvis migra e inicializa tus datos automáticamente.
+
+### Cómo activar la Base de Datos Gratuita en Render (2 clics):
+1. En tu panel de **[Render Dashboard](https://dashboard.render.com/)**, pulsa el botón **New +** ➔ **PostgreSQL**.
+2. Dale un nombre (ej. `jarvis-db`) y selecciona el plan **Free** ($0/mes).
+3. Una vez creada la base de datos, copia la **Internal Database URL** (o External Database URL).
+4. Ve a tu Web Service de Jarvis en Render ➔ pestaña **Environment**.
+5. Añade la variable:
+   - **Key:** `DATABASE_URL`
+   - **Value:** *(Pega la URL de tu base de datos copiada en el paso 3)*
+6. ¡Listo! A partir de ese momento, cada tarea que agregues o marques quedará guardada de forma 100% permanente en la nube, sobreviviendo a reinicios y suspensiones del servidor.
+
+---
+
 ## 🚀 Despliegue en Render
 
 1. Sube este repositorio a tu GitHub.
@@ -54,8 +72,9 @@ Jarvis incluye:
    - **Environment:** `Python`
    - **Build Command:** `pip install -r requirements.txt`
    - **Start Command:** `gunicorn app:app`
-5. (Opcional) En variables de entorno (*Environment Variables*), define:
-   - `JARVIS_API_KEY`: Tu clave secreta para la captura por voz (ej. `mi-clave-super-secreta`).
+5. En variables de entorno (*Environment Variables*), añade:
+   - `DATABASE_URL`: URL de tu base de datos PostgreSQL (Render, Neon o Supabase).
+   - `JARVIS_API_KEY`: Tu clave secreta para la captura por voz (ej. `jarvis-voice-2026`).
 
 ---
 

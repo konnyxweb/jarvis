@@ -377,13 +377,19 @@
                 </button>
             </div>
 
-            <!-- Filtro de Fecha (Hoy / Todos) -->
+            <!-- Filtro de Fecha (Activas / Solo Hoy / Todas) -->
             <div class="flex items-center gap-1.5 text-xs">
-                <button onclick="switchDateFilter('today')" id="dateFilterToday" class="date-tab px-3 py-1.5 rounded-lg bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 font-bold transition-all">
-                    Hoy
+                <button onclick="switchDateFilter('active')" id="dateFilterActive" class="date-tab px-3 py-1.5 rounded-lg bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 font-bold transition-all flex items-center gap-1">
+                    <span>📌</span>
+                    <span>Activas</span>
                 </button>
-                <button onclick="switchDateFilter('all')" id="dateFilterAll" class="date-tab px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 font-medium hover:text-white transition-all">
-                    Todas las Fechas
+                <button onclick="switchDateFilter('today')" id="dateFilterToday" class="date-tab px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 font-medium hover:text-white transition-all flex items-center gap-1">
+                    <span>📅</span>
+                    <span>Solo Hoy</span>
+                </button>
+                <button onclick="switchDateFilter('all')" id="dateFilterAll" class="date-tab px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 font-medium hover:text-white transition-all flex items-center gap-1">
+                    <span>🌐</span>
+                    <span>Todas</span>
                 </button>
             </div>
 
@@ -452,12 +458,20 @@
         // Configuración y Estado Global de la App
         const state = {
             category: 'all', // 'all' | 'work' | 'home' | 'health' | 'errands'
-            dateFilter: 'today', // 'today' | 'all'
+            dateFilter: 'active', // 'active' (pendientes + hoy) | 'today' | 'all'
             inputPriority: 0, // 0 = normal, 1 = Top Priority
             apiToken: "{{ api_token }}",
             tasks: [],
             stats: null
         };
+
+        function getClientDate() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
 
         // Generador de sonido sutil de logro al completar tarea (Web Audio API sin archivos externos)
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -497,14 +511,14 @@
         });
 
         function initDateInputs() {
-            const today = new Date();
-            const dateStr = today.toISOString().split('T')[0];
+            const dateStr = getClientDate();
             const dateInput = document.getElementById('taskDateInput');
             if (dateInput) {
                 dateInput.value = dateStr;
             }
 
             // Formato de fecha en header
+            const today = new Date();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             const formatted = today.toLocaleDateString('es-ES', options);
             const dateDisplay = document.getElementById('currentDateDisplay');
@@ -529,7 +543,8 @@
             try {
                 const params = new URLSearchParams({
                     category: state.category,
-                    date: state.dateFilter
+                    date: state.dateFilter,
+                    client_date: getClientDate()
                 });
                 const res = await fetch(`/api/tasks?${params.toString()}`);
                 const data = await res.json();
@@ -553,7 +568,7 @@
             const categoryRadio = document.querySelector('input[name="quickCategory"]:checked');
             const category = categoryRadio ? categoryRadio.value : 'work';
             const dateInput = document.getElementById('taskDateInput');
-            const taskDate = dateInput.value || new Date().toISOString().split('T')[0];
+            const taskDate = dateInput.value || getClientDate();
 
             try {
                 const res = await fetch('/api/tasks', {
@@ -563,7 +578,8 @@
                         title: title,
                         category: category,
                         date: taskDate,
-                        priority: state.inputPriority
+                        priority: state.inputPriority,
+                        client_date: getClientDate()
                     })
                 });
                 const data = await res.json();
@@ -594,7 +610,7 @@
                     renderTasks();
                 }
 
-                const res = await fetch(`/api/tasks/${taskId}/toggle`, { method: 'PATCH' });
+                const res = await fetch(`/api/tasks/${taskId}/toggle?client_date=${getClientDate()}`, { method: 'PATCH' });
                 const data = await res.json();
                 if (data.success) {
                     state.stats = data.stats;
@@ -610,7 +626,7 @@
             if (event) event.stopPropagation();
             if (!confirm('¿Deseas eliminar esta tarea?')) return;
             try {
-                const res = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+                const res = await fetch(`/api/tasks/${taskId}?client_date=${getClientDate()}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
                     loadTasks();
@@ -776,16 +792,17 @@
 
         function switchDateFilter(filter) {
             state.dateFilter = filter;
-            const btnToday = document.getElementById('dateFilterToday');
-            const btnAll = document.getElementById('dateFilterAll');
-
-            if (filter === 'today') {
-                btnToday.className = 'date-tab px-3 py-1.5 rounded-lg bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 font-bold transition-all';
-                btnAll.className = 'date-tab px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 font-medium hover:text-white transition-all';
-            } else {
-                btnAll.className = 'date-tab px-3 py-1.5 rounded-lg bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 font-bold transition-all';
-                btnToday.className = 'date-tab px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 font-medium hover:text-white transition-all';
-            }
+            ['active', 'today', 'all'].forEach(f => {
+                const btnId = `dateFilter${f.charAt(0).toUpperCase() + f.slice(1)}`;
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    if (f === filter) {
+                        btn.className = 'date-tab px-3 py-1.5 rounded-lg bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 font-bold transition-all flex items-center gap-1';
+                    } else {
+                        btn.className = 'date-tab px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 font-medium hover:text-white transition-all flex items-center gap-1';
+                    }
+                }
+            });
             loadTasks();
         }
 
